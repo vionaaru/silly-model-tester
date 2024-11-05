@@ -19,13 +19,22 @@ async function loadSettings() {
 // Отправка сообщения в модель и получение ответа
 async function sendMessageToModel(message) {
     const context = getContext();
-    const response = await context.chat.generateMessage({ prompt: message });
-    // Отображаем ответ в интерфейсе
-    toastr.info(`Ответ модели: ${response}`, "Модель ответила:");
+    console.log("Отправка в модель:", message);
+
+    try {
+        const response = await context.chat.generateMessage({ prompt: message });
+        console.log("Ответ от модели:", response);
+        toastr.info(`Ответ модели: ${response}`, "Модель ответила:");
+    } catch (error) {
+        console.error("Ошибка при отправке в модель:", error);
+        toastr.error("Ошибка при отправке сообщения", "Ошибка");
+    }
 }
 
 // Обработчик для кнопки отправки сообщений
 async function onSendTestMessages() {
+    console.log("Кнопка отправки сообщений нажата");
+
     const messagesText = $("#test_messages").val().trim();
     if (!messagesText) {
         toastr.warning("Введите сообщения для отправки", "Предупреждение");
@@ -35,8 +44,11 @@ async function onSendTestMessages() {
     // Разделяем сообщения по тройному переводу строки
     const messages = messagesText.split(/\n{3}/).map(msg => msg.trim()).filter(msg => msg.length > 0);
 
+    console.log("Сообщения для отправки:", messages);
+
     // Отправляем каждое сообщение в модель и обрабатываем ответы
     for (const message of messages) {
+        console.log("Отправка сообщения:", message);
         await sendMessageToModel(message);
     }
 }
