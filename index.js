@@ -10,7 +10,6 @@ const defaultSettings = {};
 
 // Загрузка настроек расширения или инициализация по умолчанию
 async function loadSettings() {
-    // Создаем настройки, если их еще нет
     extension_settings[extensionName] = extension_settings[extensionName] || {};
     if (Object.keys(extension_settings[extensionName]).length === 0) {
         Object.assign(extension_settings[extensionName], defaultSettings);
@@ -25,27 +24,30 @@ async function sendMessageToModel(message) {
     toastr.info(`Ответ модели: ${response}`, "Модель ответила:");
 }
 
-// Обработчик для кнопки отправки сообщения
-function onSendTestMessage() {
-    const message = $("#test_message").val().trim();
-    if (message) {
-        sendMessageToModel(message);
-    } else {
-        toastr.warning("Введите сообщение для отправки", "Предупреждение");
+// Обработчик для кнопки отправки сообщений
+async function onSendTestMessages() {
+    const messagesText = $("#test_messages").val().trim();
+    if (!messagesText) {
+        toastr.warning("Введите сообщения для отправки", "Предупреждение");
+        return;
+    }
+
+    // Разделяем сообщения по тройному переводу строки
+    const messages = messagesText.split(/\n{3}/).map(msg => msg.trim()).filter(msg => msg.length > 0);
+
+    // Отправляем каждое сообщение в модель и обрабатываем ответы
+    for (const message of messages) {
+        await sendMessageToModel(message);
     }
 }
 
 // Инициализация расширения при загрузке
 jQuery(async () => {
-    // Загружаем HTML-шаблон для интерфейса
     const settingsHtml = await $.get(`${extensionFolderPath}/template.html`);
-
-    // Добавляем HTML-шаблон в настройки расширений
     $("#extensions_settings").append(settingsHtml);
 
-    // Назначаем обработчики событий
-    $("#send_test_message").on("click", onSendTestMessage);
+    // Назначаем обработчик для кнопки отправки сообщений
+    $("#send_test_messages").on("click", onSendTestMessages);
 
-    // Загружаем сохраненные настройки
     loadSettings();
 });
