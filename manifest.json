@@ -1,12 +1,12 @@
 {
     "display_name": "SillyModelTester",
-    "loading_order": 5,
+    "loading_order": 2,
     "requires": [],
     "optional": [],
     "js": "index.js",
     "css": "style.css",
     "author": "Vionaaru",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "homePage": "https://github.com/vionaaru/silly-model-tester",
     "auto_update": true
 }

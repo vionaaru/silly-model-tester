@@ -1,17 +1,24 @@
-// Подключаем необходимые функции из SillyTavern
-import { getContext } from "../../extensions.js";
-import { eventSource, event_types } from "../../../script.js";
+import { eventSource, event_types, main_api } from '../../../../script.js';
+import { renderExtensionTemplateAsync } from '../../../extensions.js';
+import { POPUP_RESULT, POPUP_TYPE, Popup } from '../../../popup.js';
 
-// Получаем контекст приложения SillyTavern
-const context = getContext();
+// Проверка на наличие необходимых событий в SillyTavern
+if (!('GENERATE_AFTER_COMBINE_PROMPTS' in event_types) || !('CHAT_COMPLETION_PROMPT_READY' in event_types)) {
+    toastr.error('Required event types not found. Update SillyTavern to the latest version.');
+    throw new Error('Events not found.');
+}
 
-// Лог для хранения сообщений и ответов
+// Функция для проверки, является ли текущая модель Chat Completion
+function isChatCompletion() {
+    return main_api === 'openai';
+}
+
+// Логирование полученных ответов
 const log = [];
 
-// Функция для отправки тестового сообщения и получения ответа
+// Функция для отправки тестового сообщения и записи ответа
 async function sendTestMessage(message) {
-    // Используем generateMessage из контекста для отправки сообщения
-    const response = await context.chat.generateMessage({ prompt: message });
+    const response = await generateQuietPrompt(message);
     log.push({ message, response });
     console.log(`Сообщение: ${message}\nОтвет: ${response}\n\n`);
 }
@@ -22,23 +29,12 @@ function handleTestCommand() {
         "Привет!",
         "Как дела?",
         "Расскажи анекдот.",
-        // Добавьте другие сообщения для тестирования
     ];
 
     testMessages.forEach(async (message) => {
         await sendTestMessage(message);
     });
 }
-
-// Слушаем событие получения сообщения
-eventSource.on(event_types.MESSAGE_RECEIVED, (data) => {
-    console.log("Сообщение получено:", data.message);
-});
-
-// Слушаем событие отправки сообщения
-eventSource.on(event_types.MESSAGE_SENT, (data) => {
-    console.log("Сообщение отправлено:", data.message);
-});
 
 // Регистрируем команду /test
 import { SlashCommandParser, SlashCommand } from "../../slash-commands.js";
@@ -51,3 +47,32 @@ SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         </div>
     `
 }));
+
+// Создание кнопки для управления инспектором
+function addLaunchButton() {
+    const launchButton = document.createElement('div');
+    launchButton.id = 'sillyModelTesterButton';
+    launchButton.classList.add('list-group-item', 'flex-container', 'flexGap5', 'interactable');
+    launchButton.tabIndex = 0;
+    launchButton.title = 'Запустить тестирование моделей';
+    const icon = document.createElement('i');
+    icon.className = 'fa-solid fa-vial';
+    launchButton.appendChild(icon);
+    const textSpan = document.createElement('span');
+    textSpan.textContent = 'Запустить тестирование моделей';
+    launchButton.appendChild(textSpan);
+
+    const extensionsMenu = document.getElementById('extensionsMenu');
+    if (!extensionsMenu) {
+        throw new Error('Could not find the extensions menu');
+    }
+
+    extensionsMenu.appendChild(launchButton);
+    launchButton.addEventListener('click', handleTestCommand);
+}
+
+// Инициализация расширения
+(function init() {
+    addLaunchButton();
+    console.log("SillyModelTester initialized successfully");
+})();
