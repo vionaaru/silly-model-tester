@@ -15,24 +15,24 @@ async function loadSettings() {
     if (Object.keys(extension_settings[extensionName]).length === 0) {
         Object.assign(extension_settings[extensionName], defaultSettings);
     }
-
-    // Обновляем UI с текущими настройками
-    $("#example_setting").prop("checked", extension_settings[extensionName].example_setting).trigger("input");
 }
 
-// Обработчик изменения настроек в интерфейсе
-function onExampleInput(event) {
-    const value = Boolean($(event.target).prop("checked"));
-    extension_settings[extensionName].example_setting = value;
-    saveSettingsDebounced();
+// Отправка сообщения в модель и получение ответа
+async function sendMessageToModel(message) {
+    const context = getContext();
+    const response = await context.chat.generateMessage({ prompt: message });
+    // Отображаем ответ в интерфейсе
+    toastr.info(`Ответ модели: ${response}`, "Модель ответила:");
 }
 
-// Обработчик нажатия кнопки
-function onButtonClick() {
-    toastr.info(
-        `The checkbox is ${extension_settings[extensionName].example_setting ? "checked" : "not checked"}`,
-        "A popup appeared because you clicked the button!"
-    );
+// Обработчик для кнопки отправки сообщения
+function onSendTestMessage() {
+    const message = $("#test_message").val().trim();
+    if (message) {
+        sendMessageToModel(message);
+    } else {
+        toastr.warning("Введите сообщение для отправки", "Предупреждение");
+    }
 }
 
 // Инициализация расширения при загрузке
@@ -44,10 +44,8 @@ jQuery(async () => {
     $("#extensions_settings").append(settingsHtml);
 
     // Назначаем обработчики событий
-    $("#my_button").on("click", onButtonClick);
-    $("#example_setting").on("input", onExampleInput);
+    $("#send_test_message").on("click", onSendTestMessage);
 
     // Загружаем сохраненные настройки
     loadSettings();
 });
-
