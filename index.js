@@ -22,9 +22,15 @@ async function sendMessageToModel(message) {
     console.log("Отправка в модель:", message);
 
     try {
-        const response = await context.chat.generateMessage({ prompt: message });
-        console.log("Ответ от модели:", response);
-        toastr.info(`Ответ модели: ${response}`, "Модель ответила:");
+        // Попробуем использовать sendMessage вместо generateMessage
+        if (typeof context.chat.sendMessage === "function") {
+            const response = await context.chat.sendMessage({ prompt: message });
+            console.log("Ответ от модели:", response);
+            toastr.info(`Ответ модели: ${response}`, "Модель ответила:");
+        } else {
+            console.error("Метод sendMessage недоступен в context.chat");
+            toastr.error("Метод sendMessage не найден. Проверьте доступные методы.");
+        }
     } catch (error) {
         console.error("Ошибка при отправке в модель:", error);
         toastr.error("Ошибка при отправке сообщения", "Ошибка");
