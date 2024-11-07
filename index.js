@@ -1,4 +1,6 @@
-import { getContext } from "../../extensions.js";
+// import { getContext } from "../../extensions.js";
+import { getContext } from "../../../../public/scripts/extensions.js";
+
 
 const MODULE_NAME = 'silly-model-tester';
 
