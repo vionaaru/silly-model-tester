@@ -1,71 +1,46 @@
-// Импортируем необходимые функции из SillyTavern
-import { extension_settings, getContext, loadExtensionSettings } from "../../../extensions.js";
-import { saveSettingsDebounced } from "../../../../script.js";
+import { getContext, extension_settings, renderExtensionTemplateAsync, eventSource, event_types } from '../../../script.js';
 
-// Имя расширения и путь к папке
-const extensionName = "silly-model-tester";
-const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
-const extensionSettings = extension_settings[extensionName];
-const defaultSettings = {};
+const MODULE_NAME = 'silly-model-tester';
 
-// Загрузка настроек расширения или инициализация по умолчанию
-async function loadSettings() {
-    extension_settings[extensionName] = extension_settings[extensionName] || {};
-    if (Object.keys(extension_settings[extensionName]).length === 0) {
-        Object.assign(extension_settings[extensionName], defaultSettings);
+// Инициализация настроек
+const defaultSettings = {
+    messagesToSend: "", // Поле для ввода сообщений
+};
+
+// Функция загрузки настроек
+function loadSettings() {
+    if (Object.keys(extension_settings[MODULE_NAME]).length === 0) {
+        Object.assign(extension_settings[MODULE_NAME], defaultSettings);
     }
 }
 
-// Отправка сообщения в модель и получение ответа
-async function sendMessageToModel(message) {
-    const context = getContext();
-    console.log("Отправка в модель:", message);
-
-    try {
-        // Попробуем использовать sendMessage вместо generateMessage
-        if (typeof context.chat.sendMessage === "function") {
-            const response = await context.chat.sendMessage({ prompt: message });
-            console.log("Ответ от модели:", response);
-            toastr.info(`Ответ модели: ${response}`, "Модель ответила:");
-        } else {
-            console.error("Метод sendMessage недоступен в context.chat");
-            toastr.error("Метод sendMessage не найден. Проверьте доступные методы.");
-        }
-    } catch (error) {
-        console.error("Ошибка при отправке в модель:", error);
-        toastr.error("Ошибка при отправке сообщения", "Ошибка");
-    }
+// Привязка обработчиков событий интерфейса
+function setupListeners() {
+    $('#send_test_messages').on('click', onSendTestMessages);
 }
 
-// Обработчик для кнопки отправки сообщений
+// Функция отправки сообщений
 async function onSendTestMessages() {
-    console.log("Кнопка отправки сообщений нажата");
-
-    const messagesText = $("#test_messages").val().trim();
-    if (!messagesText) {
-        toastr.warning("Введите сообщения для отправки", "Предупреждение");
-        return;
-    }
-
-    // Разделяем сообщения по тройному переводу строки
-    const messages = messagesText.split(/\n{3}/).map(msg => msg.trim()).filter(msg => msg.length > 0);
-
-    console.log("Сообщения для отправки:", messages);
-
-    // Отправляем каждое сообщение в модель и обрабатываем ответы
+    const context = getContext();
+    const messages = $('#test_messages').val().split('\n\n\n'); // Сообщения разделены тремя переводами строки
     for (const message of messages) {
-        console.log("Отправка сообщения:", message);
-        await sendMessageToModel(message);
+        try {
+            console.log("Отправка в модель:", message);
+            const response = await context.chat.generateQuietPrompt(message); // Замените этот метод, если он не работает
+            console.log("Ответ от модели:", response);
+        } catch (error) {
+            console.error("Ошибка при отправке сообщения:", error);
+        }
     }
 }
 
-// Инициализация расширения при загрузке
-jQuery(async () => {
-    const settingsHtml = await $.get(`${extensionFolderPath}/template.html`);
-    $("#extensions_settings").append(settingsHtml);
-
-    // Назначаем обработчик для кнопки отправки сообщений
-    $("#send_test_messages").on("click", onSendTestMessages);
-
+// Инициализация расширения
+jQuery(async function () {
+    const settingsHtml = await renderExtensionTemplateAsync(MODULE_NAME, 'template');
+    $('#extensions_settings').append(settingsHtml);
     loadSettings();
+    setupListeners();
+
+    // Привязка событий для обработки обновлений чата
+    eventSource.on(event_types.CHARACTER_MESSAGE_RENDERED, onSendTestMessages);
 });
