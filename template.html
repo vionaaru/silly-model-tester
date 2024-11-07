@@ -7,16 +7,10 @@
         <div class="inline-drawer-content">
             <div class="silly-model-tester_block flex-container">
                 <label for="test_messages">Введите сообщения для тестирования (отделите сообщения тремя переводами строки):</label>
-                <textarea id="test_messages" rows="10" placeholder="Введите сообщения, разделенные тремя переводами строки"></textarea>
-                <input id="send_test_messages" class="menu_button" type="button" value="Отправить сообщения" />
+                <textarea id="test_messages" rows="20" placeholder="Введите сообщения, разделенные тремя переводами строки"></textarea>
+                <input id="send_test_messages" class="menu_button" type="submit" value="Отправить сообщения" />
             </div>
             <hr class="sysHR" />
         </div>
     </div>
 </div>
-<script>
-    document.getElementById('send_test_messages').addEventListener('click', () => {
-        const messages = document.getElementById('test_messages').value.split('\n\n\n');
-        window.sendTestMessagesToModel(messages);
-    });
-</script>
