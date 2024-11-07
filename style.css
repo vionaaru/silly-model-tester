@@ -1,1 +1,12 @@
-/* All style elements for your extension go here */
+.silly-model-tester-settings {
+    padding: 10px;
+}
+
+textarea {
+    width: 100%;
+    resize: none;
+}
+
+#send_test_messages {
+    margin-top: 10px;
+}

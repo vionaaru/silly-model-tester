@@ -1,32 +1,23 @@
-// import { getContext } from "../../extensions.js";
-import { getContext } from "../../../../public/scripts/extensions.js";
+import { generateRaw } from '../../../script.js'; // Импорт функции для генерации ответа
 
-const MODULE_NAME = 'silly-model-tester';
-
-/**
- * Функция отправки тестовых сообщений
- * @param {string[]} messages - список сообщений для тестирования
- */
-async function sendTestMessagesToModel(messages) {
-    const context = getContext();
-
-    if (!context || typeof context.sendMessageToModel !== 'function') {
-        console.error("SillyTavern API недоступен или sendMessageToModel не является функцией.");
-        return;
-    }
+// Функция для отправки тестовых сообщений модели
+async function sendTestMessages(messages) {
+    const outputField = document.getElementById('response_output'); // Поле для вывода ответов
+    outputField.value = ''; // Очистка поля перед новым тестом
 
     for (const message of messages) {
         try {
-            console.log(`Отправка сообщения: ${message}`);
-            await context.sendMessageToModel(message);  // Отправляем сообщение в модель
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Задержка перед следующим сообщением
+            const response = await generateRaw(message, "openai", false, false); // Настройки можно изменить под API
+            outputField.value += `Вопрос: ${message}\nОтвет: ${response}\n\n`;
         } catch (error) {
-            console.error(`Ошибка при отправке сообщения: ${error}`);
-            break;
+            console.error(`Ошибка при отправке сообщения "${message}":`, error);
+            outputField.value += `Ошибка при отправке сообщения: ${message}\n`;
         }
     }
-    console.log("Отправка всех тестовых сообщений завершена.");
 }
 
-// Экспортируем функцию для использования в HTML-шаблоне
-window.sendTestMessagesToModel = sendTestMessagesToModel;
+// Подключение обработчика к кнопке отправки сообщений
+document.getElementById('send_test_messages').addEventListener('click', () => {
+    const messages = document.getElementById('test_messages').value.split('\n').filter(line => line.trim());
+    sendTestMessages(messages);
+});
