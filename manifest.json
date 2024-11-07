@@ -4,9 +4,10 @@
     "requires": [],
     "optional": [],
     "js": "index.js",
+    "html": "template.html",
     "css": "",
     "author": "Vionaaru",
-    "version": "1.0.17",
+    "version": "1.0.18",
     "homePage": "https://github.com/vionaaru/silly-model-tester",
     "auto_update": true
 }

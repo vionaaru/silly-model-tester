@@ -1,57 +1,32 @@
-import { getContext, extension_settings, renderExtensionTemplateAsync } from '../../../script.js';
+// import { getContext } from "../../extensions.js";
+import { getContext } from "../../../../public/scripts/extensions.js";
 
 const MODULE_NAME = 'silly-model-tester';
 
-// Инициализация настроек
-const defaultSettings = {
-    messagesToSend: "", // Поле для ввода сообщений
-};
-
-// Функция загрузки настроек
-function loadSettings() {
-    if (Object.keys(extension_settings[MODULE_NAME]).length === 0) {
-        Object.assign(extension_settings[MODULE_NAME], defaultSettings);
-    }
-}
-
-// Привязка обработчиков событий интерфейса
-function setupListeners() {
-    $('#send_test_messages').on('click', onSendTestMessages);
-}
-
-// Функция для отправки сообщения в модель
-async function sendMessageToModel(message) {
+/**
+ * Функция отправки тестовых сообщений
+ * @param {string[]} messages - список сообщений для тестирования
+ */
+async function sendTestMessagesToModel(messages) {
     const context = getContext();
 
-    // Проверяем, существует ли context.chat и доступен ли метод send
-    if (!context || !context.chat || typeof context.chat.send !== 'function') {
-        console.error("Метод отправки сообщений не найден.");
+    if (!context || typeof context.sendMessageToModel !== 'function') {
+        console.error("SillyTavern API недоступен или sendMessageToModel не является функцией.");
         return;
     }
 
-    try {
-        console.log("Отправка в модель:", message);
-
-        // Используем метод send, если он существует
-        const response = await context.chat.send(message);
-        console.log("Ответ от модели:", response);
-    } catch (error) {
-        console.error("Ошибка при отправке сообщения:", error);
-    }
-}
-
-// Функция отправки всех сообщений из текстового поля
-async function onSendTestMessages() {
-    const messages = $('#test_messages').val().split('\n\n\n'); // Сообщения разделены тремя переводами строки
     for (const message of messages) {
-        await sendMessageToModel(message);
+        try {
+            console.log(`Отправка сообщения: ${message}`);
+            await context.sendMessageToModel(message);  // Отправляем сообщение в модель
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Задержка перед следующим сообщением
+        } catch (error) {
+            console.error(`Ошибка при отправке сообщения: ${error}`);
+            break;
+        }
     }
+    console.log("Отправка всех тестовых сообщений завершена.");
 }
 
-// Инициализация расширения
-jQuery(async function () {
-    const settingsHtml = await renderExtensionTemplateAsync(MODULE_NAME, 'template');
-    $('#extensions_settings').append(settingsHtml);
-    loadSettings();
-    setupListeners();
-});
+// Экспортируем функцию для использования в HTML-шаблоне
+window.sendTestMessagesToModel = sendTestMessagesToModel;
