@@ -1,46 +1,38 @@
-import { getContext, extension_settings, renderExtensionTemplateAsync, eventSource, event_types } from '../../../script.js';
+import { getContext } from "../../extensions.js";
+import { generateQuietPrompt } from "../../../script.js";
 
-const MODULE_NAME = 'silly-model-tester';
+const context = getContext();
 
-// Инициализация настроек
-const defaultSettings = {
-    messagesToSend: "", // Поле для ввода сообщений
-};
-
-// Функция загрузки настроек
-function loadSettings() {
-    if (Object.keys(extension_settings[MODULE_NAME]).length === 0) {
-        Object.assign(extension_settings[MODULE_NAME], defaultSettings);
+// Функция для отправки сообщения в модель
+async function sendMessageToModel(message) {
+    try {
+        console.log("Отправка в модель:", message);
+        // Используем generateQuietPrompt для отправки сообщения в модель и получения ответа
+        const response = await generateQuietPrompt(message, false, false);
+        console.log("Ответ от модели:", response);
+        return response;
+    } catch (error) {
+        console.error("Ошибка при отправке в модель:", error);
     }
 }
 
-// Привязка обработчиков событий интерфейса
-function setupListeners() {
-    $('#send_test_messages').on('click', onSendTestMessages);
-}
-
-// Функция отправки сообщений
+// Функция для обработки сообщений из текстового поля
 async function onSendTestMessages() {
-    const context = getContext();
-    const messages = $('#test_messages').val().split('\n\n\n'); // Сообщения разделены тремя переводами строки
+    const messagesText = document.getElementById("test_messages").value;
+    const messages = messagesText.split(/\n{3,}/).map(msg => msg.trim()).filter(msg => msg.length > 0);
+
+    console.log("Сообщения для отправки:", messages);
+
     for (const message of messages) {
-        try {
-            console.log("Отправка в модель:", message);
-            const response = await context.chat.generateQuietPrompt(message); // Замените этот метод, если он не работает
-            console.log("Ответ от модели:", response);
-        } catch (error) {
-            console.error("Ошибка при отправке сообщения:", error);
+        console.log("Отправка сообщения:", message);
+        const response = await sendMessageToModel(message);
+        if (response) {
+            // Отображаем ответ в консоли или сохраняем его, если нужно
+            console.log("Получен ответ:", response);
+            // Вы можете добавить дополнительную обработку ответа, например, отображение в интерфейсе
         }
     }
 }
 
-// Инициализация расширения
-jQuery(async function () {
-    const settingsHtml = await renderExtensionTemplateAsync(MODULE_NAME, 'template');
-    $('#extensions_settings').append(settingsHtml);
-    loadSettings();
-    setupListeners();
-
-    // Привязка событий для обработки обновлений чата
-    eventSource.on(event_types.CHARACTER_MESSAGE_RENDERED, onSendTestMessages);
-});
+// Добавляем обработчик для кнопки отправки
+document.getElementById("send_test_messages").addEventListener("click", onSendTestMessages);
