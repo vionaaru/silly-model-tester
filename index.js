@@ -1,4 +1,4 @@
-import { getContext, extension_settings, renderExtensionTemplateAsync } from '../../../script.js';
+import { getContext, extension_settings, renderExtensionTemplateAsync, eventSource, event_types } from '../../../script.js';
 
 const MODULE_NAME = 'silly-model-tester';
 
@@ -19,32 +19,18 @@ function setupListeners() {
     $('#send_test_messages').on('click', onSendTestMessages);
 }
 
-// Функция для отправки сообщения в модель
-async function sendMessageToModel(message) {
-    const context = getContext();
-
-    // Проверяем, существует ли context.chat и доступен ли метод send
-    if (!context || !context.chat || typeof context.chat.send !== 'function') {
-        console.error("Метод отправки сообщений не найден.");
-        return;
-    }
-
-    try {
-        console.log("Отправка в модель:", message);
-
-        // Используем метод send, если он существует
-        const response = await context.chat.send(message);
-        console.log("Ответ от модели:", response);
-    } catch (error) {
-        console.error("Ошибка при отправке сообщения:", error);
-    }
-}
-
-// Функция отправки всех сообщений из текстового поля
+// Функция отправки сообщений
 async function onSendTestMessages() {
+    const context = getContext();
     const messages = $('#test_messages').val().split('\n\n\n'); // Сообщения разделены тремя переводами строки
     for (const message of messages) {
-        await sendMessageToModel(message);
+        try {
+            console.log("Отправка в модель:", message);
+            const response = await context.chat.generateQuietPrompt(message); // Замените этот метод, если он не работает
+            console.log("Ответ от модели:", response);
+        } catch (error) {
+            console.error("Ошибка при отправке сообщения:", error);
+        }
     }
 }
 
@@ -54,4 +40,7 @@ jQuery(async function () {
     $('#extensions_settings').append(settingsHtml);
     loadSettings();
     setupListeners();
+
+    // Привязка событий для обработки обновлений чата
+    eventSource.on(event_types.CHARACTER_MESSAGE_RENDERED, onSendTestMessages);
 });
